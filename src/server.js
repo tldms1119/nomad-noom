@@ -16,14 +16,24 @@ const handleListen = () => console.log(`Listening on http:localhost:3000 `);
 const server = http.createServer(app);
 const wss = new WebSocket.Server({server});
 
-// Chat Completed 7:55
+// browser 간 통신을 위해 소켓 배열 저장
+const sockets = [];
 
 wss.on("connection", (socket) => {
+    sockets.push(socket);
+    socket["nickname"] = "Anonymous";
     console.log("Connected to Browser");
-    socket.on("close", () => { console.log("Disconnected from the Browser");});
-    socket.on("message", (message) => {
-        console.log(message.toString());
-        socket.send(message.toString());
+    socket.on("close", () => {
+        console.log("Disconnected from the Browser");
+    });
+    socket.on("message", (msg) => {
+        const message = JSON.parse(msg);
+        switch(message.type){
+            case "new_message" :
+                sockets.forEach(aSocket => aSocket.send(`${socket.nickname} : ${message.payload}`));
+            case "nickname" :
+                socket["nickname"] = message.payload; // socket 자체는 object 이므로 새로운 필드 세팅 가능
+        }
     });
 });
 
