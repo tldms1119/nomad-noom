@@ -1,3 +1,5 @@
+import http from "http";
+import WebSocket from "ws";
 import express from "express";
 
 const app = express();
@@ -9,4 +11,20 @@ app.get("/", (req, res) => res.render("home"));
 app.get("/*", (req, res) => res.redirect("/"));
 
 const handleListen = () => console.log(`Listening on http:localhost:3000 `);
-app.listen(3000, handleListen);
+
+// 같은 서버 내에서 http, webSocket 서버를 둘다 작동시키는 코드
+const server = http.createServer(app);
+const wss = new WebSocket.Server({server});
+
+// Chat Completed 7:55
+
+wss.on("connection", (socket) => {
+    console.log("Connected to Browser");
+    socket.on("close", () => { console.log("Disconnected from the Browser");});
+    socket.on("message", (message) => {
+        console.log(message.toString());
+        socket.send(message.toString());
+    });
+});
+
+server.listen(3000, handleListen);
