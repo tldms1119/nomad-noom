@@ -18,16 +18,19 @@ const wsServer = new Server(server);
 
 wsServer.on("connection", socket => {
    socket.onAny((event) => {
-      // 4:03
       console.log(`Socket Event : ${event}`);
    })
    socket.on("enter_room", (roomName, done) => {
-      console.log(socket.rooms);
       socket.join(roomName);
-      console.log(socket.rooms);
-      setTimeout(() => {
-         done("hello");
-      }, 5000);
+      done();
+      socket.to(roomName).emit("welcome");
+   });
+   socket.on("disconnecting", () => {
+      socket.rooms.forEach(room => socket.to(room).emit("bye"));
+   });
+   socket.on("new_message", (msg, room, done) => {
+      socket.to(room).emit("new_message", msg);
+      done();
    });
 });
 
