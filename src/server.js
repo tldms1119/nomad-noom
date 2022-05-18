@@ -1,5 +1,5 @@
 import http from "http";
-import WebSocket from "ws";
+import { Server } from "socket.io";
 import express from "express";
 
 const app = express();
@@ -14,27 +14,22 @@ const handleListen = () => console.log(`Listening on http:localhost:3000 `);
 
 // 같은 서버 내에서 http, webSocket 서버를 둘다 작동시키는 코드
 const server = http.createServer(app);
-const wss = new WebSocket.Server({server});
+const wsServer = new Server(server);
 
-// browser 간 통신을 위해 소켓 배열 저장
-const sockets = [];
-
-wss.on("connection", (socket) => {
-    sockets.push(socket);
-    socket["nickname"] = "Anonymous";
-    console.log("Connected to Browser");
-    socket.on("close", () => {
-        console.log("Disconnected from the Browser");
-    });
-    socket.on("message", (msg) => {
-        const message = JSON.parse(msg);
-        switch(message.type){
-            case "new_message" :
-                sockets.forEach(aSocket => aSocket.send(`${socket.nickname} : ${message.payload}`));
-            case "nickname" :
-                socket["nickname"] = message.payload; // socket 자체는 object 이므로 새로운 필드 세팅 가능
-        }
-    });
+wsServer.on("connection", socket => {
+   socket.onAny((event) => {
+      // 4:03
+      console.log(`Socket Event : ${event}`);
+   })
+   socket.on("enter_room", (roomName, done) => {
+      console.log(socket.rooms);
+      socket.join(roomName);
+      console.log(socket.rooms);
+      setTimeout(() => {
+         done("hello");
+      }, 5000);
+   });
 });
+
 
 server.listen(3000, handleListen);
